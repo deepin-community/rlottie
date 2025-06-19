@@ -1,0 +1,50 @@
+librlottie.so.0-1 #PACKAGE# #MINVER#
+* Build-Depends-Package: librlottie-dev
+ (c++)"rlottie::Animation::Animation()@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::duration() const@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::frameAtPos(double)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::frameRate() const@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::layers[abi:cxx11]() const@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::loadFromData(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::loadFromData(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)@Base" 0~git20200305.a717479+dfsg
+ (c++)"rlottie::Animation::loadFromFile(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::loadFromFile(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, bool)@Base" 0~git20200305.a717479+dfsg
+ (c++)"rlottie::Animation::markers[abi:cxx11]() const@Base" 0~git20200305.a717479+dfsg
+ (arch-bits=32|c++)"rlottie::Animation::render(unsigned int, rlottie::Surface, bool)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=64|c++)"rlottie::Animation::render(unsigned long, rlottie::Surface, bool)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=32|c++)"rlottie::Animation::renderSync(unsigned int, rlottie::Surface, bool)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=64|c++)"rlottie::Animation::renderSync(unsigned long, rlottie::Surface, bool)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=32|c++)"rlottie::Animation::renderTree(unsigned int, unsigned int, unsigned int) const@Base" 0~git20200305.a717479+dfsg
+ (arch-bits=64|c++)"rlottie::Animation::renderTree(unsigned long, unsigned long, unsigned long) const@Base" 0~git20200305.a717479+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Color_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, rlottie::Color)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Color_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<rlottie::Color (rlottie::FrameInfo const&)>&&)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Float_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, float)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Float_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<float (rlottie::FrameInfo const&)>&&)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Point_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, rlottie::Point)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Point_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<rlottie::Point (rlottie::FrameInfo const&)>&&)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Size_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, rlottie::Size)@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::setValue(rlottie::Size_Type, rlottie::Property, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<rlottie::Size (rlottie::FrameInfo const&)>&&)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=32|c++)"rlottie::Animation::size(unsigned int&, unsigned int&) const@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=64|c++)"rlottie::Animation::size(unsigned long&, unsigned long&) const@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::totalFrame() const@Base" 0~git20190721.24346d0+dfsg
+ (c++)"rlottie::Animation::~Animation()@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=32|c++)"rlottie::Surface::Surface(unsigned int*, unsigned int, unsigned int, unsigned int)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=64|c++)"rlottie::Surface::Surface(unsigned int*, unsigned long, unsigned long, unsigned long)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=32|c++)"rlottie::Surface::setDrawRegion(unsigned int, unsigned int, unsigned int, unsigned int)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=64|c++)"rlottie::Surface::setDrawRegion(unsigned long, unsigned long, unsigned long, unsigned long)@Base" 0~git20190721.24346d0+dfsg
+ (arch-bits=32|c++)"rlottie::configureModelCacheSize(unsigned int)@Base" 0~git20200305.a717479+dfsg
+ (arch-bits=64|c++)"rlottie::configureModelCacheSize(unsigned long)@Base" 0~git20200305.a717479+dfsg
+ lottie_animation_destroy@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_from_data@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_from_file@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_get_duration@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_get_frame_at_pos@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_get_framerate@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_get_markerlist@Base 0~git20200305.a717479+dfsg
+ lottie_animation_get_size@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_get_totalframe@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_property_override@Base 0~git20200305.a717479+dfsg
+ lottie_animation_render@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_render_async@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_render_flush@Base 0~git20190721.24346d0+dfsg
+ lottie_animation_render_tree@Base 0~git20200305.a717479+dfsg

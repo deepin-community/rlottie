@@ -1,0 +1,16 @@
+Description: Explicitly include <limits> header.
+Bug: https://github.com/Samsung/rlottie/pull/442
+Bug-Debian: https://bugs.debian.org/984323
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Mon, 24 May 2021 13:58:13 +0300
+
+--- a/src/vector/vrle.cpp
++++ b/src/vector/vrle.cpp
+@@ -21,6 +21,7 @@
+ #include <algorithm>
+ #include <array>
+ #include <cstdlib>
++#include <limits>
+ #include <vector>
+ #include "vdebug.h"
+ #include "vglobal.h"

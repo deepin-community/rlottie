@@ -1,0 +1,84 @@
+Description: Verify array length before writing in Freetype
+ An attempt to fix CVE-2021-31321 based on John Preston's commit.
+ https://github.com/desktop-app/rlottie/commit/d369d84e868352886cee48eecb60b462f6dfe067
+ .
+ Also check the number of ycells in gray_find_cell().
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 02 Mar 2022 19:12:30 +0300
+
+--- a/src/vector/freetype/v_ft_raster.cpp
++++ b/src/vector/freetype/v_ft_raster.cpp
+@@ -67,6 +67,17 @@
+     }                   \
+     while (0)
+ 
++#include <iterator>
++#if 201103L <= __cplusplus && __cplusplus < 201703L
++namespace std {
++
++// Taken from https://stackoverflow.com/a/18078435/5000805
++template<class T, size_t N>
++constexpr size_t size(T (&)[N]) { return N; }
++
++}
++#endif
++
+ #include <limits.h>
+ #include <setjmp.h>
+ #include <stddef.h>
+@@ -360,6 +371,7 @@ static void gray_init_cells(RAS_ARG_ voi
+     ras.buffer_size = byte_size;
+ 
+     ras.ycells = (PCell*)buffer;
++    ras.ycount = byte_size / sizeof(PCell);
+     ras.cells = NULL;
+     ras.max_cells = 0;
+     ras.num_cells = 0;
+@@ -421,6 +433,7 @@ static PCell gray_find_cell(RAS_ARG)
+     TPos   x = ras.ex;
+ 
+     if (x > ras.count_ex) x = ras.count_ex;
++    if (ras.ey < 0 || ras.ey >= ras.ycount) ft_longjmp(ras.jump_buffer, 1);
+ 
+     pcell = &ras.ycells[ras.ey];
+     for (;;) {
+@@ -707,6 +720,9 @@ static void gray_render_conic(RAS_ARG_ c
+             gray_split_conic(arc);
+             arc += 2;
+             top++;
++
++            if (top >= static_cast<int>(std::size(ras.lev_stack))) return;
++
+             levels[top] = levels[top - 1] = level - 1;
+             continue;
+         }
+@@ -833,6 +849,8 @@ static void gray_render_cubic(RAS_ARG_ c
+         }
+ 
+     Split:
++        if (arc + 6 > std::end(ras.bez_stack)) return;
++
+         gray_split_cubic(arc);
+         arc += 3;
+         continue;
+@@ -840,9 +858,8 @@ static void gray_render_cubic(RAS_ARG_ c
+     Draw:
+         gray_render_line(RAS_VAR_ arc[0].x, arc[0].y);
+ 
+-        if (arc == ras.bez_stack) return;
+-
+         arc -= 3;
++        if (arc < std::begin(ras.bez_stack)) return;
+     }
+ }
+ 
+@@ -1378,7 +1395,9 @@ static int gray_raster_render(gray_PRast
+     SW_FT_UNUSED(raster);
+     const SW_FT_Outline* outline = (const SW_FT_Outline*)params->source;
+ 
++#ifndef SW_FT_STATIC_RASTER
+     gray_TWorker worker[1];
++#endif
+ 
+     TCell buffer[SW_FT_RENDER_POOL_SIZE / sizeof(TCell)];
+     long  buffer_size = sizeof(buffer);

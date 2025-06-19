@@ -1,0 +1,44 @@
+Description: Check for layer parent-child links
+Origin: https://github.com/Samsung/rlottie/pull/262/files
+Author: John Preston <johnprestonmail@gmail.com>
+Acked-By: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Thu, 05 Mar 2020 21:16:01 +0300
+
+--- a/src/lottie/lottieitem.cpp
++++ b/src/lottie/lottieitem.cpp
+@@ -93,6 +93,14 @@ createLayerItem(LOTLayerData *layerData, VArenaAlloc *allocator)
+     }
+ }
+ 
++static bool isGoodParentLayer(LOTLayerItem *parent, LOTLayerItem *child) {
++    do {
++        if (parent == child) return false;
++        parent = parent->resolvedParentLayer();
++    } while (parent);
++    return true;
++}
++
+ LOTCompItem::LOTCompItem(LOTModel *model)
+     : mCurFrameNo(-1)
+ {
+@@ -455,7 +463,9 @@ LOTCompLayerItem::LOTCompLayerItem(LOTLayerData *layerModel, VArenaAlloc* alloca
+             auto search =
+                 std::find_if(mLayers.begin(), mLayers.end(),
+                              [id](const auto &val) { return val->id() == id; });
+-            if (search != mLayers.end()) layer->setParentLayer(*search);
++            if (search != mLayers.end() && isGoodParentLayer(*search, layer)) {
++                layer->setParentLayer(*search);
++            }
+         }
+     }
+ 
+--- a/src/lottie/lottieitem.h
++++ b/src/lottie/lottieitem.h
+@@ -150,6 +150,7 @@ public:
+    LOTLayerItem(LOTLayerData *layerData);
+    int id() const {return mLayerData->id();}
+    int parentId() const {return mLayerData->parentId();}
++   LOTLayerItem *resolvedParentLayer() const {return mParentLayer;}
+    void setParentLayer(LOTLayerItem *parent){mParentLayer = parent;}
+    void setComplexContent(bool value) { mComplexContent = value;}
+    bool complexContent() const {return mComplexContent;}

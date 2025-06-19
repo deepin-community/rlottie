@@ -1,0 +1,110 @@
+Description: Hacks for cache compatibility
+ In order to provide backward compatibility with previous versions of the
+ package available in Debian, the patch temporary reintroduces the loadFromFile
+ and the loadFromData methods with old signature. These methods are intended for
+ use by non-rebuilt binaries.
+ .
+ The modification turns caching off by default. If a client supports rlottie's
+ cache, it may call configureModelCacheSize to inform the library.
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Thu, 05 Mar 2020 21:16:01 +0300
+
+--- a/inc/rlottie.h
++++ b/inc/rlottie.h
+@@ -480,6 +480,36 @@ private:
+      */
+     Animation();
+ 
++#ifdef LOT_BUILD
++    /**
++     *  @brief Constructs an animation object from file path.
++     *
++     *  @param[in] path Lottie resource file path
++     *
++     *  @return Animation object that can render the contents of the
++     *          Lottie resource represented by file path.
++     *
++     *  @internal
++     */
++    static std::unique_ptr<Animation>
++    loadFromFile(const std::string &path);
++
++    /**
++     *  @brief Constructs an animation object from JSON string data.
++     *
++     *  @param[in] jsonData The JSON string data.
++     *  @param[in] key the string that will be used to cache the JSON string data.
++     *  @param[in] resourcePath the path will be used to search for external resource.
++     *
++     *  @return Animation object that can render the contents of the
++     *          Lottie resource represented by JSON string data.
++     *
++     *  @internal
++     */
++    static std::unique_ptr<Animation>
++    loadFromData(std::string jsonData, const std::string &key, const std::string &resourcePath);
++#endif
++
+     std::unique_ptr<AnimationImpl> d;
+ };
+ 
+--- a/src/binding/c/lottieanimation_capi.cpp
++++ b/src/binding/c/lottieanimation_capi.cpp
+@@ -36,7 +36,7 @@ struct Lottie_Animation_S
+ 
+ LOT_EXPORT Lottie_Animation_S *lottie_animation_from_file(const char *path)
+ {
+-    if (auto animation = Animation::loadFromFile(path) ) {
++    if (auto animation = Animation::loadFromFile(path, true) ) {
+         Lottie_Animation_S *handle = new Lottie_Animation_S();
+         handle->mAnimation = std::move(animation);
+         return handle;
+@@ -47,7 +47,7 @@ LOT_EXPORT Lottie_Animation_S *lottie_an
+ 
+ LOT_EXPORT Lottie_Animation_S *lottie_animation_from_data(const char *data, const char *key, const char *resourcePath)
+ {
+-    if (auto animation = Animation::loadFromData(data, key, resourcePath) ) {
++    if (auto animation = Animation::loadFromData(data, key, resourcePath, true) ) {
+         Lottie_Animation_S *handle = new Lottie_Animation_S();
+         handle->mAnimation = std::move(animation);
+         return handle;
+--- a/src/lottie/lottieanimation.cpp
++++ b/src/lottie/lottieanimation.cpp
+@@ -265,6 +265,13 @@ std::unique_ptr<Animation> Animation::lo
+     return nullptr;
+ }
+ 
++std::unique_ptr<Animation> Animation::loadFromData(
++    std::string jsonData, const std::string &key,
++    const std::string &resourcePath)
++{
++    return loadFromData(std::move(jsonData), key, resourcePath, true);
++}
++
+ std::unique_ptr<Animation>
+ Animation::loadFromFile(const std::string &path, bool cachePolicy)
+ {
+@@ -282,6 +289,12 @@ Animation::loadFromFile(const std::strin
+     return nullptr;
+ }
+ 
++std::unique_ptr<Animation>
++Animation::loadFromFile(const std::string &path)
++{
++    return loadFromFile(path, true);
++}
++
+ void Animation::size(size_t &width, size_t &height) const
+ {
+     VSize sz = d->size();
+--- a/src/lottie/lottieloader.cpp
++++ b/src/lottie/lottieloader.cpp
+@@ -71,7 +71,7 @@ private:
+ 
+     std::unordered_map<std::string, std::shared_ptr<LOTModel>>  mHash;
+     std::mutex                                                  mMutex;
+-    size_t                                                      mcacheSize{10};
++    size_t                                                      mcacheSize{0};
+ };
+ 
+ #else
