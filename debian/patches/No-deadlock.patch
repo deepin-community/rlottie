@@ -1,0 +1,15 @@
+Description: Realize a lock at any end of VRleTask
+Forwarded: https://github.com/Samsung/rlottie/pull/523/commits/0b7d6354c3f76848d87fac4a15e12c7b3401a17f
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sun, 29 May 2022 14:24:41 +0300
+
+--- a/src/vector/vraster.cpp
++++ b/src/vector/vraster.cpp
+@@ -370,6 +370,7 @@ struct VRleTask {
+     {
+         if (mPath.points().size() > SHRT_MAX ||
+             mPath.points().size() + mPath.segments() > SHRT_MAX) {
++            mRle.notify();
+             return;
+         }
+ 

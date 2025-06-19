@@ -1,0 +1,92 @@
+Description: Remove default constructor implementation
+ vcow_ptr is a rlottie-specific implementation of the shared pointer.
+ It provides a default constructor containing a static variable that is 
+ potentially deleted in the destructor. Remove constructor implementation in
+ order to avoid undefined behavior.
+Author: Vladimir Petko <vladimir.petko@canonical.com>
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1032481
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/rlottie/+bug/2009551
+Last-Update: 2023-03-07
+--- a/src/vector/vcowptr.h
++++ b/src/vector/vcowptr.h
+@@ -35,21 +35,18 @@
+ 
+         T mValue;
+     };
+-    model* mModel;
+-
++    model* mModel{};
+ public:
+     using element_type = T;
+ 
+-    vcow_ptr()
+-    {
+-        static model default_s;
+-        mModel = &default_s;
+-        ++mModel->mRef;
+-    }
++    vcow_ptr() = default;
+ 
+     ~vcow_ptr()
+     {
+-        if (mModel && (--mModel->mRef == 0)) delete mModel;
++        if (mModel && (--mModel->mRef == 0)) {
++            delete mModel;
++            mModel = nullptr;
++        } 
+     }
+ 
+     template <class... Args>
+@@ -59,12 +56,14 @@
+ 
+     vcow_ptr(const vcow_ptr& x) noexcept : mModel(x.mModel)
+     {
+-        assert(mModel);
++        if (mModel == nullptr)
++            return;
+         ++mModel->mRef;
+     }
+     vcow_ptr(vcow_ptr&& x) noexcept : mModel(x.mModel)
+     {
+-        assert(mModel);
++        if (mModel == nullptr)
++            return;
+         x.mModel = nullptr;
+     }
+ 
+@@ -87,14 +86,16 @@
+ 
+     std::size_t refCount() const noexcept
+     {
+-        assert(mModel);
++        if (mModel == nullptr)
++            return 0;
+ 
+         return mModel->mRef;
+     }
+ 
+     bool unique() const noexcept
+     {
+-        assert(mModel);
++        if (mModel == nullptr)
++            return false;
+ 
+         return mModel->mRef == 1;
+     }
+@@ -103,12 +104,15 @@
+     {
+         if (!unique()) *this = vcow_ptr(read());
+ 
++        assert(mModel);
+         return mModel->mValue;
+     }
+ 
+     auto read() const noexcept -> const element_type&
+     {
+-        assert(mModel);
++        static model default_s{};
++        if (mModel == nullptr)
++            return default_s.mValue;
+ 
+         return mModel->mValue;
+     }

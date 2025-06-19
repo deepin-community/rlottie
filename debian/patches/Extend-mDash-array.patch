@@ -1,0 +1,32 @@
+Description: An attempt to fix CVE-2021-31317
+ After conversation on GitHub PR, I've added check of data size in
+ LOTDashProperty::getDashInfo method. However, a call to the push_back method
+ remains, it should not hurt anything.
+Forwarded: https://github.com/Samsung/rlottie/pull/479
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Thu, 27 May 2021 09:49:49 +0300
+
+--- a/src/lottie/lottiemodel.cpp
++++ b/src/lottie/lottiemodel.cpp
+@@ -199,7 +199,7 @@ void LOTDashProperty::getDashInfo(int fr
+ {
+     result.clear();
+ 
+-    if (mData.empty()) return;
++    if (mData.size() <= 1) return;
+ 
+     if (result.capacity() < mData.size()) result.reserve(mData.size() + 1);
+ 
+--- a/src/vector/vdrawable.cpp
++++ b/src/vector/vdrawable.cpp
+@@ -51,6 +51,10 @@ void VDrawable::applyDashOp()
+     if (mStrokeInfo && (mType == Type::StrokeWithDash)) {
+         auto obj = static_cast<StrokeWithDashInfo *>(mStrokeInfo);
+         if (!obj->mDash.empty()) {
++            if (obj->mDash.size() == 1) {
++                // VDasher needs even-sized dash array.
++                obj->mDash.push_back(20.f);
++            }
+             VDasher dasher(obj->mDash.data(), obj->mDash.size());
+             mPath.clone(dasher.dashed(mPath));
+         }

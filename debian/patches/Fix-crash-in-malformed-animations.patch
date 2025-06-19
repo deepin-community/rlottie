@@ -1,0 +1,46 @@
+Description: Fix crash in malformed lottie animations.
+Origin: https://github.com/desktop-app/rlottie/commit/3c280ce86f649c1ea07c7ace5ed58162607c0edd
+Author: John Preston <johnprestonmail@gmail.com>
+Acked-By: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sun, 19 Jul 2020 13:12:38 +0300
+
+diff --git a/src/lottie/lottiemodel.h b/src/lottie/lottiemodel.h
+index 4a5473d..d263e46 100644
+--- a/src/lottie/lottiemodel.h
++++ b/src/lottie/lottiemodel.h
+@@ -225,11 +225,13 @@ class LOTAnimInfo
+ {
+ public:
+     T value(int frameNo) const {
++        if (mKeyFrames.empty())
++            return T();
++
+         if (mKeyFrames.front().mStartFrame >= frameNo)
+             return mKeyFrames.front().mValue.mStartValue;
+-        if(mKeyFrames.back().mEndFrame <= frameNo)
++        if (mKeyFrames.back().mEndFrame <= frameNo)
+             return mKeyFrames.back().mValue.mEndValue;
+-
+         for(const auto &keyFrame : mKeyFrames) {
+             if (frameNo >= keyFrame.mStartFrame && frameNo < keyFrame.mEndFrame)
+                 return keyFrame.value(frameNo);
+@@ -238,7 +240,8 @@ public:
+     }
+ 
+     float angle(int frameNo) const {
+-        if ((mKeyFrames.front().mStartFrame >= frameNo) ||
++        if (mKeyFrames.empty() ||
++            (mKeyFrames.front().mStartFrame >= frameNo) ||
+             (mKeyFrames.back().mEndFrame <= frameNo) )
+             return 0;
+ 
+@@ -250,6 +253,9 @@ public:
+     }
+ 
+     bool changed(int prevFrame, int curFrame) const {
++        if (mKeyFrames.empty())
++            return false;
++
+         auto first = mKeyFrames.front().mStartFrame;
+         auto last = mKeyFrames.back().mEndFrame;
+ 

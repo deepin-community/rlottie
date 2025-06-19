@@ -1,0 +1,86 @@
+Description: Fortify Lottie parser
+Origin: https://github.com/desktop-app/rlottie/commit/c490c7a098b9b3cbc3195b00e90d6fc3989e2ba2
+        https://github.com/Samsung/rlottie/pull/478/commits/2678250cb4baaf0422de8b96ed77d25e7025a365
+Forwarded: https://github.com/Samsung/rlottie/pull/478
+Author: Ilya Laktyushin <ilya@laktyush.in>, Nicholas Guriev <nicholas@guriev.su>
+Last-Update: Sat, 22 May 2021 19:07:06 +0300
+
+--- a/src/lottie/lottiemodel.h
++++ b/src/lottie/lottiemodel.h
+@@ -441,7 +441,7 @@ public:
+     LOTData::Type type() const { return mData._type;}
+     void setName(const char *name)
+     {
+-        if (name) {
++        if (name && *name) {
+             auto len = strlen(name);
+             if (len < maxShortStringLength) {
+                 setShortString(true);
+--- a/src/lottie/lottieparser.cpp
++++ b/src/lottie/lottieparser.cpp
+@@ -499,7 +499,7 @@ const char *LottieParserImpl::GetString(
+     if (st_ != kHasString) {
+         st_ = kError;
+         RAPIDJSON_ASSERT(false);
+-        return nullptr;
++        return "";
+     }
+ 
+     const char *result = v_.GetString();
+@@ -814,8 +814,7 @@ LOTAsset* LottieParserImpl::parseAsset()
+         } else if (0 == strcmp(key, "id")) { /* reference id*/
+             if (PeekType() == kStringType) {
+                 asset->mRefId = std::string(GetString());
+-            } else {
+-                RAPIDJSON_ASSERT(PeekType() == kNumberType);
++            } else if (PeekType() == kNumberType) {
+                 asset->mRefId = toString(GetInt());
+             }
+         } else if (0 == strcmp(key, "layers")) {
+@@ -997,9 +996,10 @@ LOTLayerData* LottieParserImpl::parseLay
+         } else if (0 == strcmp(key, "bm")) {
+             layer->mBlendMode = getBlendMode();
+         } else if (0 == strcmp(key, "ks")) {
+-            RAPIDJSON_ASSERT(PeekType() == kObjectType);
+-            EnterObject();
+-            layer->mTransform = parseTransformObject(ddd);
++            if (PeekType() == kObjectType) {
++                EnterObject();
++                layer->mTransform = parseTransformObject(ddd);
++            }
+         } else if (0 == strcmp(key, "shapes")) {
+             parseShapesAttr(layer);
+         } else if (0 == strcmp(key, "w")) {
+@@ -1056,7 +1056,7 @@ LOTLayerData* LottieParserImpl::parseLay
+         staticFlag &= child->isStatic();
+     }
+ 
+-    if (layer->hasMask()) {
++    if (layer->hasMask() && layer->mExtra) {
+         for (const auto &mask : layer->mExtra->mMasks) {
+             staticFlag &= mask->isStatic();
+         }
+@@ -1203,7 +1203,8 @@ LOTData* LottieParserImpl::parseGroupObj
+                 RAPIDJSON_ASSERT(PeekType() == kObjectType);
+                 parseObject(group);
+             }
+-            if (group->mChildren.back()->type() == LOTData::Type::Transform) {
++            if (!group->mChildren.empty()
++                    && group->mChildren.back()->type() == LOTData::Type::Transform) {
+                 group->mTransform = static_cast<LOTTransformData *>(group->mChildren.back());
+                 group->mChildren.pop_back();
+             }
+@@ -1517,10 +1518,13 @@ LOTTransformData* LottieParserImpl::pars
+         } else if (0 == strcmp(key, "hd")) {
+             sharedTransform->setHidden(GetBool());
+         } else if (0 == strcmp(key, "rx")) {
++            if (!obj->mExtra) return nullptr;
+             parseProperty(obj->mExtra->m3DRx);
+         } else if (0 == strcmp(key, "ry")) {
++            if (!obj->mExtra) return nullptr;
+             parseProperty(obj->mExtra->m3DRy);
+         } else if (0 == strcmp(key, "rz")) {
++            if (!obj->mExtra) return nullptr;
+             parseProperty(obj->mExtra->m3DRz);
+         } else {
+             Skip(key);

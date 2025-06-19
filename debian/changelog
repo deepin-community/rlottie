@@ -1,5 +1,104 @@
-template-repository (1.0-1) unstable; urgency=medium
+rlottie (0.1+dfsg-4.2) unstable; urgency=medium
 
-  * Initial release
+  * Non-maintainer upload.
 
- -- Tsic404 <liuheng@deepin.org>  Sat, 28 Jan 2023 13:46:49 +0800
+  [ Vladimir Petko ]
+  * debian/patches/fix-static-variable-delete.patch: Fix FTBFS with -O3.
+    Closes: #1032481. LP: #2009551.
+
+ -- Matthias Klose <doko@debian.org>  Thu, 29 Aug 2024 10:05:10 +0200
+
+rlottie (0.1+dfsg-4.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix FTBFS with GCC 14 (Closes: #1075448).
+
+ -- Andrey Rakhmatullin <wrar@debian.org>  Sun, 25 Aug 2024 18:58:42 +0500
+
+rlottie (0.1+dfsg-4) unstable; urgency=medium
+
+  * Update No-cyclic-structures.patch (Closes: #1019499).
+    - Move check of layer self-nesting to parsing stage from rendering.
+  * Rewrite Atomic-render.patch (Closes: #1018725).
+    - Use non-blocking std::atomic_flag instead of std::atomic_bool, because
+      the flag does not require linking against libatomic on RISC-V 64bit.
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Sat, 10 Sep 2022 18:49:38 +0300
+
+rlottie (0.1+dfsg-3) unstable; urgency=medium
+
+  * Apply fixes and improve stability (Closes: #995728, #1016406).
+    - New patches:
+      + Atomic-render.patch
+      + Avoid-assertion-failures.patch
+      + Check-empty-frames.patch
+      + Finite-loop-in-VBezier-tAtLength.patch
+      + Ignore-unspecified-type.patch
+      + Init-keyframe.patch
+      + No-cyclic-structures.patch
+      + No-deadlock.patch
+      + Positive-points.patch
+      + Reject-reversed-frames.patch
+      + Stop-VBezier-length-overflow.patch
+    - Amended patches:
+      + Check-buffer-length.patch
+      + Fortify-FreeType-raster.patch
+    - Replace Zero-corrupt-point.patch with Empty-animation-data.patch based on
+      Subhransu Mohanty's commit (Closes: #994614)
+    - Import another his commit as Improve-rendering-performance.patch.
+  * Update Debhelper compatibility level to 13.
+    - Remove CMAKE_SKIP_INSTALL_ALL_DEPENDENCY variable.
+  * Declare compliance with Standards Version of v4.6.1, no required changes.
+  * Ignore very-long-line-length-in-source-file Lintian tag in JSON examples.
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Mon, 08 Aug 2022 13:25:43 +0300
+
+rlottie (0.1+dfsg-2) unstable; urgency=medium
+
+  * Update patches.
+    - Sync patches with John Preston's fork.
+      + New Freetype-raster.patch for fix CVE-2021-31321. (Closes: #988885)
+      + New Fortify-lottie-parser.patch for fix crashes on invalid input.
+    - New Extend-mDash-array.patch for fix CVE-2021-31317. (Closes: #988885)
+    - New Include-limits-header.patch for fix build with the latest GCC.
+      (Closes: #984323)
+    - New Zero-corrupt-point.patch for fix crash on inappropriate shape.
+      (Closes: #974095)
+    - New Avoid-nullptr-in-solidColor.patch fixes null pointer dereferencing.
+    - Fix error handling of broken JSON that led to crashes.
+  * Skip RAPIDJSON_ASSERT as in Telegram or in upstream rLottie.
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Wed, 02 Jun 2021 09:23:26 +0300
+
+rlottie (0.1+dfsg-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Add upstream metadata.
+  * Update debian/watch file for the first release.
+  * Apply John Preston's fixes for improve stability.
+    - Check-buffer-length.patch
+    - Fix-crash-in-malformed-animations.patch
+    - Fix-crash-on-invalid-data.patch
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Sun, 19 Jul 2020 21:43:03 +0300
+
+rlottie (0~git20200305.a717479+dfsg-1) unstable; urgency=medium
+
+  * Merge the latest upstream commit.
+  * Fix some crashes on corrupted input.
+  * Activate in-library cache support.
+  * Bump Standards Version to 4.5.0, no related changes.
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Thu, 05 Mar 2020 22:16:05 +0300
+
+rlottie (0~git20190721.24346d0+dfsg-2) unstable; urgency=medium
+
+  * Copy full text of The FreeType Project License to debian/copyright file.
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Sun, 11 Aug 2019 14:19:58 +0300
+
+rlottie (0~git20190721.24346d0+dfsg-1) unstable; urgency=low
+
+  * Initial upload. (Closes: #931832)
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Tue, 23 Jul 2019 08:21:50 +0300
