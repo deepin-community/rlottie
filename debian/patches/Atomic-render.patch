@@ -1,0 +1,46 @@
+Description: Make the render() method really atomic
+ Value of the mRenderInProgress flag should be checked and updated in a single
+ operation or its atomic characteristics will not work.
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sat, 10 Sep 2022 18:41:59 +0300
+
+--- a/src/lottie/lottieanimation.cpp
++++ b/src/lottie/lottieanimation.cpp
+@@ -74,7 +74,7 @@ private:
+     std::shared_ptr<LOTModel>    mModel;
+     std::unique_ptr<LOTCompItem> mCompItem;
+     SharedRenderTask             mTask;
+-    std::atomic<bool>            mRenderInProgress;
++    std::atomic_flag             mRenderInProgress;
+ };
+ 
+ void AnimationImpl::setValue(const std::string &keypath, LOTVariant &&value)
+@@ -104,17 +104,15 @@ bool AnimationImpl::update(size_t frameN
+ 
+ Surface AnimationImpl::render(size_t frameNo, const Surface &surface, bool keepAspectRatio)
+ {
+-    bool renderInProgress = mRenderInProgress.load();
+-    if (renderInProgress) {
++    if (mRenderInProgress.test_and_set()) {
+         vCritical << "Already Rendering Scheduled for this Animation";
+         return surface;
+     }
+ 
+-    mRenderInProgress.store(true);
+     update(frameNo,
+            VSize(int(surface.drawRegionWidth()), int(surface.drawRegionHeight())), keepAspectRatio);
+     mCompItem->render(surface);
+-    mRenderInProgress.store(false);
++    mRenderInProgress.clear();
+ 
+     return surface;
+ }
+@@ -123,7 +121,7 @@ void AnimationImpl::init(const std::shar
+ {
+     mModel = model;
+     mCompItem = std::make_unique<LOTCompItem>(mModel.get());
+-    mRenderInProgress = false;
++    mRenderInProgress.clear();
+ }
+ 
+ #ifdef LOTTIE_THREAD_SUPPORT

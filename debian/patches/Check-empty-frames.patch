@@ -1,0 +1,16 @@
+Description: Check that animation has frames before accessing
+Bug: https://github.com/Samsung/rlottie/issues/522
+Origin: https://github.com/Samsung/rlottie/pull/523/commits/7446363b482978746bd6e7b5dbc4f49553f9f50f
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 02 Mar 2022 19:12:30 +0300
+
+--- a/src/lottie/lottiemodel.h
++++ b/src/lottie/lottiemodel.h
+@@ -380,6 +380,7 @@ public:
+             value().toPath(path);
+         } else {
+             const auto &vec = animation().mKeyFrames;
++            if (vec.empty()) return;
+             if (vec.front().mStartFrame >= frameNo)
+                 return vec.front().mValue.mStartValue.toPath(path);
+             if(vec.back().mEndFrame <= frameNo)

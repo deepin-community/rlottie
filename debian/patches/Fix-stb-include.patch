@@ -1,0 +1,15 @@
+Description: Fix path to stb header
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sun, 21 Jul 2019 21:31:05 +0300
+
+--- a/src/vector/stb/stb_image.cpp
++++ b/src/vector/stb/stb_image.cpp
+@@ -11,7 +11,7 @@
+ #define STBI_NO_GIF
+ #define STBI_NO_PIC
+ 
+-#include "stb_image.h"
++#include <stb/stb_image.h>
+ 
+ #if defined _WIN32 || defined __CYGWIN__
+   #ifdef LOT_BUILD

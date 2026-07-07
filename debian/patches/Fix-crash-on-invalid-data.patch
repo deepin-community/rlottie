@@ -1,0 +1,73 @@
+Description: Fix some crashes on invalid data.
+ Should fix CVE-2021-31318, CVE-2021-31319, CVE-2021-31320, CVE-2021-31322.
+Origin: https://github.com/desktop-app/rlottie/commit/e0ea6af518345c4a46195c4951e023e621a9eb8f
+        https://github.com/desktop-app/rlottie/commit/839dcab7f083a51b8130061ea5ec245195af6c58
+Author: John Preston <johnprestonmail@gmail.com>
+Acked-By: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sat, 22 May 2021 19:07:06 +0300
+
+--- a/src/lottie/lottieitem.cpp
++++ b/src/lottie/lottieitem.cpp
+@@ -451,6 +451,9 @@ LOTCompLayerItem::LOTCompLayerItem(LOTLa
+     // as lottie model keeps the data in front-toback-order.
+     for (auto it = mLayerData->mChildren.crbegin();
+          it != mLayerData->mChildren.rend(); ++it ) {
++        if ((*it)->type() != LOTData::Type::Layer) {
++            continue;
++        }
+         auto model = static_cast<LOTLayerData *>(*it);
+         auto item = createLayerItem(model, allocator);
+         if (item) mLayers.push_back(item);
+--- a/src/lottie/lottiemodel.cpp
++++ b/src/lottie/lottiemodel.cpp
+@@ -244,11 +244,18 @@ void LOTGradient::populate(VGradientStop
+     LottieGradient gradData = mGradient.value(frameNo);
+     auto            size = gradData.mGradient.size();
+     float *        ptr = gradData.mGradient.data();
++    if (!ptr) {
++        return;
++    }
+     int            colorPoints = mColorPoints;
+-    if (colorPoints == -1) {  // for legacy bodymovin (ref: lottie-android)
++    if (colorPoints < 0 || colorPoints > int(size / 4)) {
+         colorPoints = int(size / 4);
+     }
+     auto    opacityArraySize = size - colorPoints * 4;
++    if ((opacityArraySize % 2 != 0) ||
++            (std::size_t(colorPoints) > opacityArraySize / 2 && opacityArraySize < 4)) {
++        opacityArraySize = 0;
++    }
+     float *opacityPtr = ptr + (colorPoints * 4);
+     stops.clear();
+     size_t j = 0;
+@@ -302,6 +309,9 @@ void LOTGradient::populate(VGradientStop
+         }
+         ptr += 4;
+     }
++    if (stops.empty()) {
++        stops.push_back(std::make_pair(0.0f, VColor(255, 255, 255, 255)));
++    }
+ }
+ 
+ void LOTGradient::update(std::unique_ptr<VGradient> &grad, int frameNo)
+--- a/src/vector/vdrawhelper.cpp
++++ b/src/vector/vdrawhelper.cpp
+@@ -146,6 +146,9 @@ bool VGradientCache::generateGradientCol
+                                                 float                 opacity,
+                                                 uint32_t *colorTable, int size)
+ {
++    if (stops.empty()) {
++        return false;
++    }
+     int                  dist, idist, pos = 0;
+     size_t i;
+     bool                 alpha = false;
+@@ -165,7 +168,7 @@ bool VGradientCache::generateGradientCol
+ 
+     colorTable[pos++] = curColor;
+ 
+-    while (fpos <= curr->first) {
++    while (fpos <= curr->first && pos < size) {
+         colorTable[pos] = colorTable[pos - 1];
+         pos++;
+         fpos += incr;

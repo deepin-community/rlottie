@@ -1,0 +1,31 @@
+Description: Finite loop in VBezier::tAtLength()
+Origin: https://github.com/Samsung/rlottie/commit/625bc4c48a2d5d45661fd56202f8a1af78b01195
+Forwarded: https://github.com/Samsung/rlottie/pull/483
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 16 Feb 2022 23:14:47 +0300
+
+--- a/src/vector/vbezier.cpp
++++ b/src/vector/vbezier.cpp
+@@ -85,12 +85,12 @@ float VBezier::tAtLength(float l) const
+     t *= 0.5;
+ 
+     float lastBigger = 1.0;
+-    while (1) {
++    for (int num = 0; num < 100500; num++) {
+         VBezier right = *this;
+         VBezier left;
+         right.parameterSplitLeft(t, &left);
+         float lLen = left.length();
+-        if (fabs(lLen - l) < error) break;
++        if (fabs(lLen - l) < error) return t;
+ 
+         if (lLen < l) {
+             t += (lastBigger - t) * 0.5f;
+@@ -99,6 +99,7 @@ float VBezier::tAtLength(float l) const
+             t -= t * 0.5f;
+         }
+     }
++    vWarning << "no convergence";
+     return t;
+ }
+ 
