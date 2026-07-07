@@ -1,0 +1,64 @@
+Description: Fixed signed shift issue, CVE-2026-10305
+Author: Michal Szczecinski <m.szczecinsk@partner.samsung.com>
+Origin: https://github.com/Samsung/rlottie/commit/b4f5101a4d1a8da60cc14cfd05608551b3448c77
+Forwarded: https://github.com/Samsung/rlottie/pull/587
+Bug-Debian: https://bugs.debian.org/1139179
+Acked-By: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Tue, 09 Jun 2026 16:16:06 +0300
+
+--- a/src/vector/freetype/v_ft_raster.cpp
++++ b/src/vector/freetype/v_ft_raster.cpp
+@@ -198,17 +198,17 @@ typedef struct SW_FT_Outline_Funcs_ {
+ #define ONE_PIXEL (1L << PIXEL_BITS)
+ #define PIXEL_MASK (-1L << PIXEL_BITS)
+ #define TRUNC(x) ((TCoord)((x) >> PIXEL_BITS))
+-#define SUBPIXELS(x) ((TPos)(x) << PIXEL_BITS)
++#define SUBPIXELS(x) ((TPos)((unsigned long)(x) << PIXEL_BITS))
+ #define FLOOR(x) ((x) & -ONE_PIXEL)
+ #define CEILING(x) (((x) + ONE_PIXEL - 1) & -ONE_PIXEL)
+ #define ROUND(x) (((x) + ONE_PIXEL / 2) & -ONE_PIXEL)
+ 
+ #if PIXEL_BITS >= 6
+-#define UPSCALE(x) ((x) << (PIXEL_BITS - 6))
++#define UPSCALE(x)   ((TPos)((unsigned long)(x) << (PIXEL_BITS - 6)))
+ #define DOWNSCALE(x) ((x) >> (PIXEL_BITS - 6))
+ #else
+-#define UPSCALE(x) ((x) >> (6 - PIXEL_BITS))
+-#define DOWNSCALE(x) ((x) << (6 - PIXEL_BITS))
++#define UPSCALE(x)   ((x) >> (6 - PIXEL_BITS))
++#define DOWNSCALE(x) ((TPos)((unsigned long)(x) << (6 - PIXEL_BITS)))
+ #endif
+ 
+ /* Compute `dividend / divisor' and return both its quotient and     */
+@@ -1072,7 +1072,7 @@ static int SW_FT_Outline_Decompose(const
+                                    void*                      user)
+ {
+ #undef SCALED
+-#define SCALED(x) (((x) << shift) - delta)
++#define SCALED(x) ((TPos)((unsigned long)(x) << shift) - delta)
+ 
+     SW_FT_Vector v_last;
+     SW_FT_Vector v_control;
+--- a/src/vector/vdrawhelper.cpp
++++ b/src/vector/vdrawhelper.cpp
+@@ -156,6 +156,11 @@ bool VGradientCache::generateGradientCol
+ 
+     if (!vCompare(opacity, 1.0f)) alpha = true;
+ 
++    if (stopCount == 0) {
++        for (int j = 0; j < size; ++j) colorTable[j] = 0;
++        return alpha;
++    }
++
+     start = stops.data();
+     curr = start;
+     if (!curr->second.isOpaque()) alpha = true;
+@@ -171,7 +176,7 @@ bool VGradientCache::generateGradientCol
+         fpos += incr;
+     }
+ 
+-    for (i = 0; i < stopCount - 1; ++i) {
++    for (i = 0; i + 1 < stopCount; ++i) {
+         curr = (start + i);
+         next = (start + i + 1);
+         delta = 1 / (next->first - curr->first);

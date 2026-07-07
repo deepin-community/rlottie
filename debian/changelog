@@ -1,3 +1,32 @@
+rlottie (0.1+dfsg-4.2+deb13u2) trixie; urgency=medium
+
+  * Fix off-by-one error in Fortify-FreeType-raster.patch.
+  * Add Fixed-vpath-potential-issue.patch to fix CVE-2026-47319.
+    (Closes: #1138919)
+  * Add Limit-recursion-in-LOTLayerItem.patch to fix CVE-2026-47320.
+    (Closes: #1138920)
+  * New Fixed-signed-shift-issue.patch probably fixes CVE-2026-10305.
+    (Closes: #1139179)
+  * New Fix-heap-buffer-overflow-from-short-truncation.patch.
+
+ -- Nicholas Guriev <guriev-ns@ya.ru>  Fri, 03 Jul 2026 14:01:02 +0300
+
+rlottie (0.1+dfsg-4.2+deb13u1) trixie; urgency=medium
+
+  * Non-maintainer upload by the LTS Team.
+  * CVE-2025-0634 (Closes: #1109341)
+    CVE-2025-53074
+    CVE-2025-53075
+    Most patches to fix these issues are already part of:
+      Fix-crash-on-invalid-data.patch
+    The remaining boundary check is left in:
+      CVE-2025-0634-CVE-2025-53074-CVE-2025-53075.patch
+    For the sake of completeness, the whole upstream patch
+    for these CVEs is added in:
+      CVE-2025-0634-CVE-2025-53074-CVE-2025-53075.patch.org
+
+ -- Thorsten Alteholz <debian@alteholz.de>  Tue, 25 Nov 2025 12:05:10 +0100
+
 rlottie (0.1+dfsg-4.2) unstable; urgency=medium
 
   * Non-maintainer upload.
