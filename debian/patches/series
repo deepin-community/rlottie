@@ -25,3 +25,9 @@ Avoid-assertion-failures.patch
 No-deadlock.patch
 Atomic-render.patch
 fix-static-variable-delete.patch
+
+CVE-2025-0634-CVE-2025-53074-CVE-2025-53075.patch
+Fixed-vpath-potential-issue.patch
+Limit-recursion-in-LOTLayerItem.patch
+Fixed-signed-shift-issue.patch
+Fix-heap-buffer-overflow-from-short-truncation.patch

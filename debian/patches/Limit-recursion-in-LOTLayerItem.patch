@@ -1,0 +1,39 @@
+Description: Limit recurion depth in LOTLayerItem
+ This patch is based on Michal Szczecinski's commit and adapted to version 0.1
+ before Lottie model refactoring. Should fix CVE-2026-47320.
+ .
+ https://github.com/Samsung/rlottie/commit/bf689b72b8482c5ea674235854bd11b6d1b42588
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Forwarded: not-needed
+Bug-Debian: https://bugs.debian.org/1138920
+Last-Update: Tue, 09 Jun 2026 16:16:05 +0300
+
+--- a/src/lottie/lottieitem.cpp
++++ b/src/lottie/lottieitem.cpp
+@@ -419,8 +419,13 @@ void LOTLayerItem::update(int frameNumbe
+ 
+ VMatrix LOTLayerItem::matrix(int frameNo) const
+ {
+-    return mParentLayer
+-               ? (mLayerData->matrix(frameNo) * mParentLayer->matrix(frameNo))
++    return matrix(frameNo, 0);
++}
++
++VMatrix LOTLayerItem::matrix(int frameNo, int depth) const
++{
++    return mParentLayer && depth < 64
++               ? mLayerData->matrix(frameNo) * mParentLayer->matrix(frameNo, depth + 1)
+                : mLayerData->matrix(frameNo);
+ }
+ 
+--- a/src/lottie/lottieitem.h
++++ b/src/lottie/lottieitem.h
+@@ -180,6 +180,8 @@ protected:
+    float opacity(int frameNo) const {return mLayerData->opacity(frameNo);}
+    inline DirtyFlag flag() const {return mDirtyFlag;}
+    bool skipRendering() const {return (!visible() || vIsZero(combinedAlpha()));}
++private:
++   VMatrix matrix(int frameNo, int depth) const;
+ protected:
+    std::unique_ptr<LOTLayerMaskItem>           mLayerMask;
+    LOTLayerData                               *mLayerData{nullptr};

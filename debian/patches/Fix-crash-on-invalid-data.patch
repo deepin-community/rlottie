@@ -52,17 +52,7 @@ Last-Update: Sat, 22 May 2021 19:07:06 +0300
  void LOTGradient::update(std::unique_ptr<VGradient> &grad, int frameNo)
 --- a/src/vector/vdrawhelper.cpp
 +++ b/src/vector/vdrawhelper.cpp
-@@ -146,6 +146,9 @@ bool VGradientCache::generateGradientCol
-                                                 float                 opacity,
-                                                 uint32_t *colorTable, int size)
- {
-+    if (stops.empty()) {
-+        return false;
-+    }
-     int                  dist, idist, pos = 0;
-     size_t i;
-     bool                 alpha = false;
-@@ -165,7 +168,7 @@ bool VGradientCache::generateGradientCol
+@@ -165,7 +165,7 @@ bool VGradientCache::generateGradientCol
  
      colorTable[pos++] = curColor;
  

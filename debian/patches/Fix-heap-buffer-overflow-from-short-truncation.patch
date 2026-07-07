@@ -1,0 +1,31 @@
+Description: Fix heap buffer overflow from short truncation of span Y coordinate
+ SW_FT_Span.y is a 16-bit short, so limit our coordinates appropriately.  The
+ clamp (and its "is an integer" comment) was inherited from upstream FreeType's
+ ftgrays.c, where FT_Span has no y field and the scanline y is carried
+ separately as an int. rLottie added a `short y` to the span struct without
+ adapting the clamp, so the INT_MAX bound never prevented the (short) narrowing
+ at the store site.
+ .
+ This patch based on Michal Maciola's pull request with the numeral literals
+ replaced by the standard macro from the <limits.h> header.
+Forwarded: https://github.com/Samsung/rlottie/pull/595
+Author: Michal Maciola <michalmaciola@gmail.com>
+Acked-By: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Updated: Thu, 02 Jul 2026 07:55:03 +0300
+
+--- a/src/vector/freetype/v_ft_raster.cpp
++++ b/src/vector/freetype/v_ft_raster.cpp
+@@ -935,10 +935,10 @@ static void gray_hline(RAS_ARG_ TCoord x
+     x += (TCoord)ras.min_ex;
+ 
+     /* SW_FT_Span.x is a 16-bit short, so limit our coordinates appropriately */
+-    if (x >= 32767) x = 32767;
++    if (x >= SHRT_MAX) x = SHRT_MAX;
+ 
+-    /* SW_FT_Span.y is an integer, so limit our coordinates appropriately */
+-    if (y >= SW_FT_INT_MAX) y = SW_FT_INT_MAX;
++    /* SW_FT_Span.y is a 16-bit short, so limit our coordinates appropriately */
++    if (y >= SHRT_MAX) y = SHRT_MAX;
+ 
+     if (coverage) {
+         SW_FT_Span* span;
