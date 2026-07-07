@@ -1,0 +1,97 @@
+Description: Deal with cyclic structures, avoid stack overflow in Lottie model
+Bug: https://github.com/Samsung/rlottie/issues/522
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sat, 10 Sep 2022 18:26:32 +0300
+
+--- a/src/lottie/lottiemodel.cpp
++++ b/src/lottie/lottiemodel.cpp
+@@ -19,10 +19,26 @@
+ #include "lottiemodel.h"
+ #include <cassert>
+ #include <iterator>
++#include <set>
+ #include <stack>
+ #include "vimageloader.h"
+ #include "vline.h"
+ 
++bool LOTData::includes(const LOTData *pointer) const {
++    if (this == pointer) {
++        return true;
++    }
++    if (type() != Type::ShapeGroup && type() != Type::Layer) {
++        return false;
++    }
++    for (LOTData *child : static_cast<const LOTGroupData *>(this)->mChildren) {
++        if (child->includes(pointer)) {
++            return true;
++        }
++    }
++    return false;
++}
++
+ /*
+  * We process the iterator objects in the children list
+  * by iterating from back to front. when we find a repeater object
+@@ -73,6 +89,8 @@ public:
+ 
+     void visit(LOTData *obj)
+     {
++        if (!mVisited.insert(obj).second) return;
++
+         switch (obj->type()) {
+         case LOTData::Type::ShapeGroup:
+         case LOTData::Type::Layer: {
+@@ -83,6 +101,9 @@ public:
+             break;
+         }
+     }
++
++private:
++    std::set<LOTData*> mVisited;
+ };
+ 
+ class LottieUpdateStatVisitor {
+@@ -120,6 +141,8 @@ public:
+     }
+     void visit(LOTData *obj)
+     {
++        if (!mVisited.insert(obj).second) return;
++
+         switch (obj->type()) {
+         case LOTData::Type::Layer: {
+             visitLayer(static_cast<LOTLayerData *>(obj));
+@@ -138,6 +161,8 @@ public:
+         }
+     }
+ 
++private:
++    std::set<LOTData*> mVisited;
+ };
+ 
+ void LOTCompositionData::processRepeaterObjects()
+--- a/src/lottie/lottiemodel.h
++++ b/src/lottie/lottiemodel.h
+@@ -460,6 +460,7 @@ public:
+         }
+     }
+     const char* name() const {return shortString() ? mData._buffer : mPtr;}
++    bool includes(const LOTData *) const;
+ private:
+     static constexpr unsigned char maxShortStringLength = 14;
+     void setShortString(bool value) {mData._shortString = value;}
+--- a/src/lottie/lottieparser.cpp
++++ b/src/lottie/lottieparser.cpp
+@@ -608,7 +608,12 @@ void LottieParserImpl::resolveLayerRefs(
+             if (layer->mLayerType == LayerType::Image) {
+                 layer->extra()->mAsset = search->second;
+             } else if (layer->mLayerType == LayerType::Precomp) {
+-                layer->mChildren = search->second->mLayers;
++                layer->mChildren.clear();
++                layer->mChildren.reserve(search->second->mLayers.size());
++                for (LOTData *candidate : search->second->mLayers) {
++                    if (candidate->includes(layer)) continue;
++                    layer->mChildren.push_back(candidate);
++                }
+                 layer->setStatic(layer->isStatic() &&
+                                  search->second->isStatic());
+             }

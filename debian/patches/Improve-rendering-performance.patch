@@ -1,0 +1,56 @@
+Description: Improve matte rendering performance for simple layer
+Origin: https://github.com/Samsung/rlottie/commit/194b31736d666056ec43931bb3732d5919f6a06a
+Author: Subhransu Mohanty <sub.mohanty@samsung.com>
+Last-Update: Thu, 17 Feb 2022 00:00:06 +0300
+
+--- a/src/lottie/lottieitem.cpp
++++ b/src/lottie/lottieitem.cpp
+@@ -577,6 +577,16 @@ void LOTCompLayerItem::renderMatteLayer(
+         break;
+     }
+ 
++    auto clip = layerPainter.clipBoundingRect();
++
++    // if the layer has only one renderer then use it as the clip rect
++    // when blending 2 buffer and copy back to final buffer to avoid
++    // unnecessary pixel processing.
++    if (layer->renderList().size() == 1)
++    {
++        clip = layer->renderList()[0]->rle().boundingRect();
++    }
++
+     // 2.2 update srcBuffer if the matte is luma type
+     if (layer->matteType() == MatteType::Luma ||
+         layer->matteType() == MatteType::LumaInv) {
+@@ -584,10 +594,10 @@ void LOTCompLayerItem::renderMatteLayer(
+     }
+ 
+     // 2.3 draw src buffer as mask
+-    layerPainter.drawBitmap(VPoint(), src->bitmap());
++    layerPainter.drawBitmap(VPoint(), src->bitmap(), clip);
+     layerPainter.end();
+     // 3. draw the result buffer into painter
+-    painter->drawBitmap(VPoint(), layer->bitmap());
++    painter->drawBitmap(VPoint(), layer->bitmap(), clip);
+ }
+ 
+ void LOTClipperItem::update(const VMatrix &matrix)
+--- a/src/vector/vpainter.cpp
++++ b/src/vector/vpainter.cpp
+@@ -80,12 +80,12 @@ void VPainter::drawBitmapUntransform(con
+ {
+     mSpanData.initTexture(&bitmap, const_alpha, VBitmapData::Plain, source);
+     if (!mSpanData.mUnclippedBlendFunc) return;
+-    mSpanData.dx = float(-target.x());
+-    mSpanData.dy = float(-target.y());
+ 
+-    VRect rr = source.translated(target.x(), target.y());
++    // update translation matrix for source texture.
++    mSpanData.dx = float(target.x() - source.x());
++    mSpanData.dy = float(target.y() - source.y());
+ 
+-    fillRect(rr, &mSpanData);
++    fillRect(target, &mSpanData);
+ }
+ 
+ VPainter::VPainter(VBitmap *buffer)

@@ -1,0 +1,106 @@
+Description: Reimplement IterativeParseInit and IterativeParseNext
+ In order to use the old rapidjson v1.1.0, we have to implement IterativeReader
+ class by ourselves.
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sun, 21 Jul 2019 21:31:05 +0300
+
+--- a/src/lottie/lottieparser.cpp
++++ b/src/lottie/lottieparser.cpp
+@@ -54,13 +54,75 @@
+ #include <array>
+ 
+ #include "lottiemodel.h"
++
++#define private protected
+ #include "rapidjson/document.h"
++#undef private
+ 
+ RAPIDJSON_DIAG_PUSH
+ #ifdef __GNUC__
+ RAPIDJSON_DIAG_OFF(effc++)
+ #endif
+ 
++namespace {
++
++class IterativeReader : public rapidjson::Reader {
++public:
++    void IterativeParseInit() {
++        SetParseError(rapidjson::kParseErrorNone, 0);
++        mCurrentState = IterativeParsingStartState;
++    }
++
++    template <unsigned parseFlags, typename InputStream, typename Handler>
++    bool IterativeParseNext(InputStream &input, Handler &handler) {
++        while (input.Peek() != '\0') {
++            SkipWhitespace(input);
++
++            Token token = Tokenize(input.Peek());
++            IterativeParsingState nextState = Predict(mCurrentState, token);
++            if (nextState == IterativeParsingErrorState) {
++                HandleError(mCurrentState, input);
++                return false;
++            }
++
++            mCurrentState = Transit<parseFlags>(mCurrentState, token, nextState,
++                                                input, handler);
++            if (mCurrentState == IterativeParsingFinishState) {
++                SkipWhitespace(input);
++                if (input.Peek() != '\0') {
++                    HandleError(mCurrentState, input);
++                    return false;
++                } else {
++                    return true;
++                }
++            }
++
++            if (nextState != IterativeParsingElementDelimiterState
++                    && nextState != IterativeParsingMemberDelimiterState
++                    && nextState != IterativeParsingKeyValueDelimiterState) {
++                return true;
++            }
++        }
++
++        ClearStack();
++        if (mCurrentState != IterativeParsingFinishState) {
++            HandleError(mCurrentState, input);
++            return false;
++        }
++        return true;
++    }
++
++    bool IterativeParseComplete() const {
++        return mCurrentState == IterativeParsingErrorState
++                || mCurrentState == IterativeParsingFinishState;
++    }
++
++private:
++    IterativeParsingState mCurrentState = IterativeParsingStartState;
++};
++
++}  // namespace
++
+ using namespace rapidjson;
+ 
+ class LookaheadParserHandler {
+@@ -161,7 +223,7 @@ protected:
+ 
+     Value                 v_;
+     LookaheadParsingState st_;
+-    Reader                r_;
++    IterativeReader       r_;
+     InsituStringStream    ss_;
+ 
+     static const int parseFlags = kParseDefaultFlags | kParseInsituFlag;
+@@ -344,9 +406,9 @@ const char *LottieParserImpl::NextObject
+      * so ignore those and don't put parser in the error state.
+      * */
+     if (st_ == kExitingArray || st_ == kEnteringObject) {
+-        // #ifdef DEBUG_PARSER
+-        //         vDebug<<"Object: Exiting nested loop";
+-        // #endif
++        #ifdef DEBUG_PARSER
++                vDebug << "Object: Exiting nested loop";
++        #endif
+         return nullptr;
+     }
+ 

@@ -1,0 +1,18 @@
+Description: Do default initialization of key frame values
+Bug: https://github.com/Samsung/rlottie/issues/522
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 02 Mar 2022 19:12:30 +0300
+
+--- a/src/lottie/lottiemodel.h
++++ b/src/lottie/lottiemodel.h
+@@ -178,8 +178,8 @@ inline T lerp(const T& start, const T& e
+ template <typename T>
+ struct LOTKeyFrameValue
+ {
+-    T mStartValue;
+-    T mEndValue;
++    T mStartValue{};
++    T mEndValue{};
+     T value(float t) const {
+         return lerp(mStartValue, mEndValue, t);
+     }

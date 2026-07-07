@@ -1,0 +1,132 @@
+Description: Check buffer length in vrle.
+ Should fix CVE-2021-31315 related issues.
+Origin: https://github.com/desktop-app/rlottie/commit/0ee2e9c5843257ccd11672611829b9bb5d02aa98
+        https://github.com/desktop-app/rlottie/commit/75b31e49b3c69355c4971ee2029eff23a22fcb75
+        https://github.com/desktop-app/rlottie/commit/839dcab7f083a51b8130061ea5ec245195af6c58
+Author: John Preston <johnprestonmail@gmail.com>
+Acked-By: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sat, 22 May 2021 19:07:06 +0300
+
+--- a/src/vector/vrle.cpp
++++ b/src/vector/vrle.cpp
+@@ -497,11 +497,14 @@ static void rleIntersectWithRect(const V
+     result->size = result->alloc - available;
+ }
+ 
+-void blitXor(VRle::Span *spans, int count, uchar *buffer, int offsetX)
++void blitXor(VRle::Span *spans, int count, uchar *buffer, int bufferLen, int offsetX)
+ {
+     while (count--) {
+         int    x = spans->x + offsetX;
+         int    l = spans->len;
++        if (x < 0 || x + l > bufferLen) {
++            return;
++        }
+         uchar *ptr = buffer + x;
+         while (l--) {
+             int da = *ptr;
+@@ -513,12 +516,15 @@ void blitXor(VRle::Span *spans, int coun
+     }
+ }
+ 
+-void blitDestinationOut(VRle::Span *spans, int count, uchar *buffer,
++void blitDestinationOut(VRle::Span *spans, int count, uchar *buffer, int bufferLen,
+                         int offsetX)
+ {
+     while (count--) {
+         int    x = spans->x + offsetX;
+         int    l = spans->len;
++        if (x < 0 || x + l > bufferLen) {
++            return;
++        }
+         uchar *ptr = buffer + x;
+         while (l--) {
+             *ptr = divBy255((255 - spans->coverage) * (*ptr));
+@@ -528,11 +534,14 @@ void blitDestinationOut(VRle::Span *span
+     }
+ }
+ 
+-void blitSrcOver(VRle::Span *spans, int count, uchar *buffer, int offsetX)
++void blitSrcOver(VRle::Span *spans, int count, uchar *buffer, int bufferLen, int offsetX)
+ {
+     while (count--) {
+         int    x = spans->x + offsetX;
+         int    l = spans->len;
++        if (x < 0 || x + l > bufferLen) {
++            return;
++        }
+         uchar *ptr = buffer + x;
+         while (l--) {
+             *ptr = spans->coverage + divBy255((255 - spans->coverage) * (*ptr));
+@@ -542,11 +551,14 @@ void blitSrcOver(VRle::Span *spans, int
+     }
+ }
+ 
+-void blit(VRle::Span *spans, int count, uchar *buffer, int offsetX)
++void blit(VRle::Span *spans, int count, uchar *buffer, int bufferLen, int offsetX)
+ {
+     while (count--) {
+         int    x = spans->x + offsetX;
+         int    l = spans->len;
++        if (x < 0 || x + l > bufferLen) {
++            return;
++        }
+         uchar *ptr = buffer + x;
+         while (l--) {
+             *ptr = std::max(spans->coverage, *ptr);
+@@ -556,13 +568,16 @@ void blit(VRle::Span *spans, int count,
+     }
+ }
+ 
+-size_t bufferToRle(uchar *buffer, int size, int offsetX, int y, VRle::Span *out)
++size_t bufferToRle(uchar *buffer, int bufferLen, int size, int offsetX, int y, VRle::Span *out)
+ {
+     size_t count = 0;
+     uchar  value = buffer[0];
+     int    curIndex = 0;
+ 
+     size = offsetX < 0 ? size + offsetX : size;
++    if (size > bufferLen) {
++        return count;
++    }
+     for (int i = 0; i < size; i++) {
+         uchar curValue = buffer[0];
+         if (value != curValue) {
+@@ -620,14 +635,15 @@ static void rleOpGeneric(VRleHelper *a,
+             int bLength = (bPtr - 1)->x + (bPtr - 1)->len;
+             int offset = std::min(aStart->x, bStart->x);
+ 
+-            std::array<uchar, 1024> array = {{0}};
+-            blit(aStart, (aPtr - aStart), array.data(), -offset);
++            constexpr auto kBufferSize = 1024;
++            std::array<uchar, kBufferSize> array = {{0}};
++            blit(aStart, (aPtr - aStart), array.data(), kBufferSize, -offset);
+             if (op == Operation::Add)
+-                blitSrcOver(bStart, (bPtr - bStart), array.data(), -offset);
++                blitSrcOver(bStart, (bPtr - bStart), array.data(), kBufferSize, -offset);
+             else if (op == Operation::Xor)
+-                blitXor(bStart, (bPtr - bStart), array.data(), -offset);
++                blitXor(bStart, (bPtr - bStart), array.data(), kBufferSize, -offset);
+             VRle::Span *tResult = temp.data();
+-            size_t size = bufferToRle(array.data(), std::max(aLength, bLength),
++            size_t size = bufferToRle(array.data(), kBufferSize, std::max(aLength, bLength),
+                                       offset, y, tResult);
+             if (available >= size) {
+                 while (size--) {
+@@ -683,11 +699,12 @@ static void rleSubstractWithRle(VRleHelp
+             int bLength = (bPtr - 1)->x + (bPtr - 1)->len;
+             int offset = std::min(aStart->x, bStart->x);
+ 
+-            std::array<uchar, 1024> array = {{0}};
+-            blit(aStart, (aPtr - aStart), array.data(), -offset);
+-            blitDestinationOut(bStart, (bPtr - bStart), array.data(), -offset);
++            constexpr auto kBufferSize = 1024;
++            std::array<uchar, kBufferSize> array = {{0}};
++            blit(aStart, (aPtr - aStart), array.data(), kBufferSize, -offset);
++            blitDestinationOut(bStart, (bPtr - bStart), array.data(), kBufferSize, -offset);
+             VRle::Span *tResult = temp.data();
+-            size_t size = bufferToRle(array.data(), std::max(aLength, bLength),
++            size_t size = bufferToRle(array.data(), kBufferSize, std::max(aLength, bLength),
+                                       offset, y, tResult);
+             if (available >= size) {
+                 while (size--) {

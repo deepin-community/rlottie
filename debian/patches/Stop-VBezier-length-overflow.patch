@@ -1,0 +1,65 @@
+Description:  Stop computing Bézier curve length when float overflow occurs after splitting
+Bug: https://github.com/Samsung/rlottie/issues/522
+Origin: https://github.com/Samsung/rlottie/pull/523/commits/f7b72f1ed133882f1d5a75ede5fe6b6fc4cbea1d
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 02 Mar 2022 19:12:30 +0300
+
+--- a/src/vector/vbezier.cpp
++++ b/src/vector/vbezier.cpp
+@@ -42,7 +42,7 @@ float VBezier::length() const
+     VBezier left, right; /* bez poly splits */
+     float   len = 0.0;   /* arc length */
+     float   chord;       /* chord length */
+-    float   length;
++    float   length = 0;
+ 
+     len = len + VLine::length(x1, y1, x2, y2);
+     len = len + VLine::length(x2, y2, x3, y3);
+@@ -52,9 +52,10 @@ float VBezier::length() const
+ 
+     if ((len - chord) > 0.01) {
+         split(&left, &right);    /* split in two */
+-        length = left.length() + /* try left side */
+-                 right.length(); /* try right side */
+-
++        if (*this != left)
++            length += left.length();  /* try left side */
++        if (*this != right)
++            length += right.length();  /* try right side */
+         return length;
+     }
+ 
+--- a/src/vector/vbezier.h
++++ b/src/vector/vbezier.h
+@@ -19,11 +19,14 @@
+ #ifndef VBEZIER_H
+ #define VBEZIER_H
+ 
++#include <tuple>
+ #include <vpoint.h>
+ 
+ V_BEGIN_NAMESPACE
+ 
+ class VBezier {
++    friend bool operator == (const VBezier &l, const VBezier &r);
++
+ public:
+     VBezier() = default;
+     VPointF     pointAt(float t) const;
+@@ -129,6 +132,16 @@ inline void VBezier::split(VBezier *firs
+     firstHalf->y4 = secondHalf->y1 = (firstHalf->y3 + secondHalf->y2) * 0.5f;
+ }
+ 
++inline bool operator == (const VBezier &l, const VBezier &r)
++{
++    return std::tie(l.x1, l.y1, l.x2, l.y2, l.x3, l.y3, l.x4, l.y4)
++        == std::tie(r.x1, r.y1, r.x2, r.y2, r.x3, r.y3, r.x4, r.y4);
++}
++inline bool operator != (const VBezier &l, const VBezier &r)
++{
++    return !(l == r);
++}
++
+ V_END_NAMESPACE
+ 
+ #endif  // VBEZIER_H

@@ -1,0 +1,32 @@
+Description: Fix dereferencing of null pointer in model::Layer::solidColor() getter
+ Also remove unnecessarily check of mExtra->mAsset in the asset() getter.
+Forwarded: https://github.com/Samsung/rlottie/pull/482
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sat, 29 May 2021 11:13:17 +0300
+
+--- a/src/lottie/lottiemodel.h
++++ b/src/lottie/lottiemodel.h
+@@ -613,7 +613,10 @@ public:
+     int inFrame() const noexcept{return mInFrame;}
+     int outFrame() const noexcept{return mOutFrame;}
+     int startFrame() const noexcept{return mStartFrame;}
+-    LottieColor solidColor() const noexcept{return mExtra->mSolidColor;}
++    LottieColor solidColor() const noexcept
++    {
++        return mExtra ? mExtra->mSolidColor : LottieColor();
++    }
+     bool autoOrient() const noexcept{return mAutoOrient;}
+     int timeRemap(int frameNo) const;
+     VSize layerSize() const {return mLayerSize;}
+@@ -626,10 +629,7 @@ public:
+     {
+         return mTransform ? mTransform->opacity(frameNo) : 1.0f;
+     }
+-    LOTAsset* asset() const
+-    {
+-        return (mExtra && mExtra->mAsset) ? mExtra->mAsset : nullptr;
+-    }
++    LOTAsset* asset() const {return mExtra ? mExtra->mAsset : nullptr;}
+ public:
+     ExtraLayerData* extra()
+     {

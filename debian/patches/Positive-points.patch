@@ -1,0 +1,20 @@
+Description: Points counter must be positive
+Bug: https://github.com/Samsung/rlottie/issues/522
+Origin: https://github.com/Samsung/rlottie/pull/523/commits/19fc8e9c2804ccfba5bee3eb18bc952a87684490
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 02 Mar 2022 19:12:30 +0300
+
+--- a/src/lottie/lottieitem.cpp
++++ b/src/lottie/lottieitem.cpp
+@@ -1151,6 +1151,11 @@ void LOTPolystarItem::updatePath(VPath &
+     path.reset();
+     VMatrix m;
+ 
++    if (!(points > 0)) {
++        vWarning << "The number of path points is below zero or NaN at all";
++        return;
++    }
++
+     if (mData->mPolyType == LOTPolystarData::PolyType::Star) {
+         path.addPolystar(points, innerRadius, outerRadius, innerRoundness,
+                          outerRoundness, 0.0, 0.0, 0.0, mData->direction());

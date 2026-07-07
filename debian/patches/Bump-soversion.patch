@@ -1,0 +1,24 @@
+Description: Bump soversion number
+Forwarded: not-needed
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Sun, 21 Jul 2019 21:31:05 +0300
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,12 +18,12 @@ set_target_properties( rlottie PROPERTIE
+ 
+ #declare version of the target
+ set(player_version_major 0)
+-set(player_version_minor 0)
+-set(player_version_patch 1)
++set(player_version_minor 1)
++set(player_version_patch 0)
+ set(player_version ${player_version_major}.${player_version_minor}.${player_version_patch} )
+ set_target_properties(rlottie PROPERTIES
+-                        VERSION    ${player_version}
+-                        SOVERSION  ${player_version_major}
++                        VERSION    ${player_version}-1
++                        SOVERSION  ${player_version_major}-1
+                       )
+ 
+ #declare alias so that library can be used inside the build tree, e.g. when testing

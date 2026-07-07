@@ -1,0 +1,19 @@
+Description: Reject reversed frames
+Origin: https://github.com/Samsung/rlottie/commit/327fb7dbaad225555d5ca567b9adee9ce5f879f4
+Forwarded: https://github.com/Samsung/rlottie/pull/483
+Author: Nicholas Guriev <guriev-ns@ya.ru>
+Last-Update: Wed, 16 Feb 2022 23:14:47 +0300
+
+--- a/src/lottie/lottieparser.cpp
++++ b/src/lottie/lottieparser.cpp
+@@ -661,6 +661,10 @@ void LottieParserImpl::parseComposition(
+         // don't have a valid bodymovin header
+         return;
+     }
++    if (comp->mStartFrame > comp->mEndFrame) {
++        // reversed animation? missing data?
++        return;
++    }
+     if (!IsValid()) {
+         return;
+     }
